@@ -1,0 +1,6 @@
+The unidata.map is created from UnicodeData.txt and
+CompositionExclusions.txt of Unicode 3.0.0.
+
+To update unidata.map,
+
+  ruby mkunidata.rb UnicodeData.txt CompositionExclusions.txt > unidata.map

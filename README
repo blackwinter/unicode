@@ -1,0 +1,107 @@
+		   Unicode Library for Ruby
+			Version 0.1
+
+		       Yoshida Masato
+
+
+- Introduction
+
+  Unicode string manipulation library for Ruby.
+  This library is based on UTR #15 Unicode Normalization Forms(*1).
+
+    *1 <URL:http://www.unicode.org/unicode/reports/tr15/>
+
+
+- Install
+
+  This can work with ruby-1.4 or later. I recommend you to
+  use ruby-1.4.2 or later.
+
+  Make and install usually.
+  For example, when Ruby supports dynamic linking on your OS,
+
+    ruby extconf.rb
+    make
+    make install
+
+
+- Usage
+
+  If you do not link this module with Ruby statically, 
+
+    require "unicode"
+
+  before using.
+
+
+- Module Functions
+
+  All parameters of functions must be UTF-8.
+
+  Unicode::strcmp(str1, str2)
+  Unicode::strcmp_compat(str1, str2)
+    Compares Unicode strings with normalization.
+    strcmp uses Normalization Form D, strcmp_compat uses
+    Normalization Form KD.
+
+  Unicode::decopose(str)
+  Unicode::decopose_compat(str)
+    Decompose Unicode string. Then the trailing characters
+    are sorted in canonical order.
+    decompose uses the canonical decomposition,
+    decompose_compat uses the compatibility decomposition.
+    The decomposition is based on the character decomposition
+    mapping in UnicodeData.txt and the Hangul decomposition
+    algorithm.
+
+  Unicode::compose(str)
+    Compose Unicode string. Before composing, the trailing
+    characters are sorted in canonical order.
+    The parameter must be decomposed.
+    The composition is based on the reverse of the
+    character decomposition mapping in UnicodeData.txt,
+    CompositionExclusions.txt and the Hangul composition
+    algorithm.
+
+  Unicode::normalize_D(str)
+  Unicode::normalize_KD(str)
+    Normalizes Unicode string in form D or form KD.
+    These are aliases of decompose/decompose_compat.
+
+  Unicode::normalize_C(str)
+  Unicode::normalize_KC(str)
+    Normalizes Unicode string in form C or form KC.
+      normalize_C  = decompose + compose
+      normalize_KC = decompose_compat + compose
+
+  Unicode::upcase(str)
+  Unicode::downcase(str)
+  Unicode::capitalize(str)
+    Case conversion functions.
+    The mappings which these functions use are not normative
+    in UnicodeData.txt.
+
+- Bugs
+
+  UTR #15 suggests that the look up for Normalization Form C
+  should not be implemented with a hash of string for better
+  performance.
+
+
+- Copying
+
+  This extension module is copyrighted free software by
+  Yoshida Masato.
+
+  You can redistribute it and/or modify it under the same
+  term as Ruby.
+
+
+- Author
+
+  Yoshida Masato <yoshidam@yoshidam.net>
+
+
+- History
+
+  Nov 23, 1999 version 0.1

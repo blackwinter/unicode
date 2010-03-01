@@ -1,0 +1,14 @@
+.
+unidata.map
+extconf.rb
+unicode.c
+test.rb
+MANIFEST
+tools
+tools/mkunidata.rb
+tools/README
+wstring.c
+README
+ustring.h
+wstring.h
+ustring.c
