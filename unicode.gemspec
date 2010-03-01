@@ -1,7 +1,7 @@
 Gem::Specification.new { |s|
   s.name             = %q{unicode}
-  s.version          = %q{0.1.1}
-  s.date             = %q{2005-08-13}
+  s.version          = %q{0.2.0}
+  s.date             = %q{2009-12-29}
   s.summary          = %q{Unicode normalization library.}
   s.require_paths    = %q{.}
   s.author           = %q{Yoshida Masato}
