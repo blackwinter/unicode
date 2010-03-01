@@ -1,5 +1,5 @@
 		   Unicode Library for Ruby
-			Version 0.1
+			Version 0.2.0
 
 		       Yoshida Masato
 
@@ -14,8 +14,8 @@
 
 - Install
 
-  This can work with ruby-1.4 or later. I recommend you to
-  use ruby-1.4.2 or later.
+  This can work with ruby-1.8 or later. I recommend you to
+  use ruby-1.8.1 or later.
 
   Make and install usually.
   For example, when Ruby supports dynamic linking on your OS,
@@ -36,16 +36,16 @@
 
 - Module Functions
 
-  All parameters of functions must be UTF-8.
+  All parameters of functions must be UTF-8 strings.
 
   Unicode::strcmp(str1, str2)
   Unicode::strcmp_compat(str1, str2)
-    Compares Unicode strings with normalization.
-    strcmp uses Normalization Form D, strcmp_compat uses
+    Compare Unicode strings with a normalization.
+    strcmp uses the Normalization Form D, strcmp_compat uses
     Normalization Form KD.
 
-  Unicode::decopose(str)
-  Unicode::decopose_compat(str)
+  Unicode::decompose(str)
+  Unicode::decompose_compat(str)
     Decompose Unicode string. Then the trailing characters
     are sorted in canonical order.
     decompose uses the canonical decomposition,
@@ -65,12 +65,12 @@
 
   Unicode::normalize_D(str)
   Unicode::normalize_KD(str)
-    Normalizes Unicode string in form D or form KD.
+    Normalize Unicode string in form D or form KD.
     These are aliases of decompose/decompose_compat.
 
   Unicode::normalize_C(str)
   Unicode::normalize_KC(str)
-    Normalizes Unicode string in form C or form KC.
+    Normalize Unicode string in form C or form KC.
       normalize_C  = decompose + compose
       normalize_KC = decompose_compat + compose
 
@@ -78,7 +78,7 @@
   Unicode::downcase(str)
   Unicode::capitalize(str)
     Case conversion functions.
-    The mappings which these functions use are not normative
+    The mappings that are used by these functions are not normative
     in UnicodeData.txt.
 
 - Bugs
@@ -86,6 +86,8 @@
   UTR #15 suggests that the look up for Normalization Form C
   should not be implemented with a hash of string for better
   performance.
+
+  Case conversion functions should reflecte UTR #21.
 
 
 - Copying
@@ -104,4 +106,7 @@
 
 - History
 
+  Dec 29, 2009 version 0.2.0 update for Ruby 1.9.1 and Unicode 5.2
+  Sep 10, 2005 version 0.1.2 update unidata.map for Unicode 4.1.0
+  Aug 26, 2004 version 0.1.1 update unidata.map for Unicode 4.0.1
   Nov 23, 1999 version 0.1

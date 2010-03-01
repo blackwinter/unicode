@@ -5,6 +5,8 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "wstring.h"
 
 WString*
@@ -115,13 +117,11 @@ WStr_allocWithUTF8(WString* s, const char* in)
   int rest = 0;
 
   WStr_alloc(s);
-
-  if (in == 0)
+  if (in == NULL)
     return s;
-
   for (i = 0; in[i] != '\0'; i++) {
     unsigned char c = in[i];
-    if (c >= 128 && c < 192) {
+    if ((c & 0xc0) == 0x80) {
       if (rest == 0)
 	return NULL;
       u = (u << 6) | (c & 63);
@@ -130,29 +130,29 @@ WStr_allocWithUTF8(WString* s, const char* in)
 	WStr_addWChar(s, u);
       }
     }
-    else if (c < 128) {      /* 0b0nnnnnnn (7bit) */
+    else if ((c & 0x80) == 0) {      /* 0b0nnnnnnn (7bit) */
       if (c == 0)
 	return NULL;
       WStr_addWChar(s, c);
       rest = 0;
     }
-    else if (c < 224) {      /* 0b110nnnnn (11bit) */
+    else if ((c & 0xe0) == 0xc0) {      /* 0b110nnnnn (11bit) */
       rest = 1;
       u = c & 31;
     }
-    else if (c < 240) {      /* 0b1110nnnn (16bit) */
+    else if ((c & 0xf0) == 0xe0) {      /* 0b1110nnnn (16bit) */
       rest = 2;
       u = c & 15;
     }
-    else if (c < 248) {      /* 0b11110nnn (21bit) */
+    else if ((c & 0xf8) == 0xf0) {      /* 0b11110nnn (21bit) */
       rest = 3;
       u = c & 7;
     }
-    else if (c < 252) {      /* 0b111110nn (26bit) */
+    else if ((c & 0xfc) == 0xf8) {      /* 0b111110nn (26bit) */
       rest = 4;
       u = c & 3;
     }
-    else if (c < 254) {      /* 0b1111110n (31bit) */
+    else if ((c & 0xfe) == 0xfc) {      /* 0b1111110n (31bit) */
       rest = 5;
       u = c & 1;
     }
@@ -170,7 +170,7 @@ WStr_convertIntoUString(WString* wstr, UString* ustr)
   int i;
 
   for (i = 0; i < wstr->len; i++) {
-    UStr_addWChar(ustr, wstr->str[i]);
+    UniStr_addWChar(ustr, wstr->str[i]);
   }
 
   return ustr;

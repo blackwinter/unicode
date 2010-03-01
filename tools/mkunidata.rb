@@ -1,13 +1,13 @@
 #! /usr/local/bin/ruby -KU
 
-if $KCODE != 'UTF8'
-  raise "$KCODE must be UTF8"
-end
+#if $KCODE != 'UTF8'
+#  raise "$KCODE must be UTF8"
+#end
 
 HEAD=<<EOS
 /*
  * UnicodeData
- * 1999 by yoshidam
+ * Copyright 1999, 2004 by yoshidam
  *
  */
 
@@ -25,7 +25,7 @@ struct unicode_data {
   const int titlecase;
 };
 
-const static struct unicode_data unidata[] = {
+static const struct unicode_data unidata[] = {
 EOS
 
 TAIL=<<EOS
@@ -41,7 +41,7 @@ def hex2str(hex)
   canon = ""
   compat = ""
   chars = hex.split(" ")
-  if chars[0] =~ /^[0-9A-F]{4}$/
+  if chars[0] =~ /^[0-9A-F]{4,6}$/
     chars.each do |c|
       canon << [c.hex].pack("U")
     end
@@ -59,7 +59,7 @@ def hex2str(hex)
 end
 
 def hex_or_nil(str)
-  return "-1" if str.nil?
+  return "-1" if str.nil? || str == ''
   return format("0x%04x", str.hex)
 end
 
@@ -81,9 +81,19 @@ exclusion = {}
 open(ARGV[1]) do |f|
   while l = f.gets
     next if l =~ /^\#/ || l =~ /^$/
+    next if l !~ /Full_Composition_Exclusion/
     code, = l.split(/\s/)
-    code = code.hex
-    exclusion[code] = true
+    if code =~ /^[0-9A-F]+$/
+      code = code.hex
+      exclusion[code] = true
+    elsif code =~ /^([0-9A-F]+)\.\.([0-9A-F]+)$/
+#      p [$1, $2]
+      scode = $1.hex
+      ecode = $2.hex
+      for code in scode..ecode
+        exclusion[code] = true
+      end
+    end
   end
 end
 
@@ -94,7 +104,7 @@ open(ARGV[0]) do |f|
     l.chomp!
     code, charname, gencat, ccclass, bidicat,decomp,
       dec, digit, num, mirror, uni1_0, comment, upcase,
-      lowcase, titlecase = l.split(";");
+      lowcase, titlecase = l.split(";", 15);
     code = code.hex
     ccclass = ccclass.to_i
     canon, compat = hex2str(decomp)

@@ -1,4 +1,5 @@
 #! /usr/local/bin/ruby -KU
+# -*- coding: utf-8 -*-
 
 require 'unicode'
 
@@ -29,12 +30,12 @@ p Unicode::strcmp("ガ", "ｶﾞ")
 p Unicode::strcmp_compat("ｶﾞ", "ガ")
 
 print "Decomposition/composition\n"
-p Unicode::normalize_D([?c, 0x301, 0x327].pack("U*")).udump
-p Unicode::normalize_D([?c, 0x327, 0x301].pack("U*")).udump
+p Unicode::normalize_D([0x63, 0x301, 0x327].pack("U*")).udump
+p Unicode::normalize_D([0x63, 0x327, 0x301].pack("U*")).udump
 p Unicode::normalize_D([0x107, 0x327].pack("U*")).udump
 p Unicode::normalize_D([0xe7, 0x301].pack("U*")).udump
-p Unicode::normalize_C([?c, 0x301, 0x327].pack("U*")).udump
-p Unicode::normalize_C([?c, 0x327, 0x301].pack("U*")).udump
+p Unicode::normalize_C([0x63, 0x301, 0x327].pack("U*")).udump
+p Unicode::normalize_C([0x63, 0x327, 0x301].pack("U*")).udump
 p Unicode::normalize_C([0x107, 0x327].pack("U*")).udump
 p Unicode::normalize_C([0xe7, 0x301].pack("U*")).udump
 
@@ -50,7 +51,7 @@ p Unicode::normalize_D("요시담").udump
 p Unicode::normalize_C("요시담").udump
 
 print "Composition Exclusion\n"
-print "   ANGSTROM SIGN [U+221B]\n"
+print "   ANGSTROM SIGN [U+212B]\n"
 p Unicode::normalize_D([0x212b].pack("U")).udump
 p Unicode::normalize_C([0x212b].pack("U")).udump
 print "   LATIN CAPITAL LETTER A WITH RING ABOVE [U+00C5]\n"
@@ -58,9 +59,9 @@ p Unicode::normalize_D([0x00c5].pack("U")).udump
 p Unicode::normalize_C([0x00c5].pack("U")).udump
 
 print "Case conversion\n"
-p Unicode::normalize_C(Unicode::upcase([?c, 0x301, 0x327, 0xff41].pack("U*"))).udump
-p Unicode::normalize_C(Unicode::downcase([?C, 0x301, 0x327, 0xff21].pack("U*"))).udump
-p Unicode::capitalize([0x1f1, ?A, ?a, 0xff21].pack("U*")).udump
+p Unicode::normalize_C(Unicode::upcase([0x63, 0x301, 0x327, 0xff41].pack("U*"))).udump
+p Unicode::normalize_C(Unicode::downcase([0x43, 0x301, 0x327, 0xff21].pack("U*"))).udump
+p Unicode::capitalize([0x1f1, 0x41, 0x61, 0xff21].pack("U*")).udump
 
 
 ## Local variables:
