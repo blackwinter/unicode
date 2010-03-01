@@ -1,5 +1,5 @@
 		   Unicode Library for Ruby
-			Version 0.2.0
+			Version 0.3.0
 
 		       Yoshida Masato
 
@@ -106,6 +106,7 @@
 
 - History
 
+  Feb 26, 2010 version 0.3.0 fix a capitalize bug and support SpecialCasing
   Dec 29, 2009 version 0.2.0 update for Ruby 1.9.1 and Unicode 5.2
   Sep 10, 2005 version 0.1.2 update unidata.map for Unicode 4.1.0
   Aug 26, 2004 version 0.1.1 update unidata.map for Unicode 4.0.1

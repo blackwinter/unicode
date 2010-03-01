@@ -7,7 +7,7 @@
 HEAD=<<EOS
 /*
  * UnicodeData
- * Copyright 1999, 2004 by yoshidam
+ * Copyright 1999, 2004, 2010 by yoshidam
  *
  */
 
@@ -20,9 +20,9 @@ struct unicode_data {
   const int exclusion;
   const char* const canon;
   const char* const compat;
-  const int uppercase;
-  const int lowercase;
-  const int titlecase;
+  const char* uppercase;
+  const char* lowercase;
+  const char* titlecase;
 };
 
 static const struct unicode_data unidata[] = {
@@ -59,8 +59,13 @@ def hex2str(hex)
 end
 
 def hex_or_nil(str)
-  return "-1" if str.nil? || str == ''
-  return format("0x%04x", str.hex)
+  return nil if str.nil? || str == ''
+  ret = ""
+  chars = str.split(" ")
+  chars.each do |c|
+    ret << [c.hex].pack("U")
+  end
+  return ret
 end
 
 def printstr(str)
@@ -97,6 +102,25 @@ open(ARGV[1]) do |f|
   end
 end
 
+## scan Special Casing
+casing = {}
+open(ARGV[2]) do |f|
+  while l = f.gets
+    l.chomp!
+    next if l =~ /^\#/ || l =~ /^$/
+    l =~ /^(.*)#\s*(.*)$/
+    l = $1
+    comment = $2
+    code,lower,title,upper,cond = l.split(/;\s/)
+    next if cond
+    lower = nil if code == lower
+    title = nil if code == title
+    upper = nil if code == upper
+    code = code.hex
+    casing[code] = [hex_or_nil(lower), hex_or_nil(title), hex_or_nil(upper)]
+  end
+end
+
 ## scan UnicodeData
 udata = {}
 open(ARGV[0]) do |f|
@@ -130,9 +154,16 @@ udata.sort.each do |code, data|
       ex = 3
     end
   end
+  ## Special Casing
+  if casing[code]
+    lowcase = casing[code][0] if casing[code][0]
+    titlecase = casing[code][1] if casing[code][1]
+    upcase = casing[code][2] if casing[code][2]
+  end
   printf("  { 0x%04x, %d, %d, %s, %s, %s, %s, %s }, \n",
          code, ccclass, ex, printstr(canon),
-         printstr(compat), upcase, lowcase, titlecase)
+         printstr(compat), printstr(upcase), printstr(lowcase),
+         printstr(titlecase))
 end
-printf("  { -1, 0, 0, NULL, NULL, -1, -1, -1 }\n")
+printf("  { -1, 0, 0, NULL, NULL, NULL, NULL, NULL }\n")
 print TAIL

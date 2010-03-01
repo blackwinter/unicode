@@ -1,5 +1,6 @@
 /*
- * Unicode Library version 0.2
+ * Unicode Library version 0.3
+ * FEb 26, 2010: version 0.3
  * Dec 29, 2009: version 0.2
  * Nov 23, 1999 yoshidam
  *
@@ -95,40 +96,37 @@ get_compat(int ucs)
   return NULL;
 }
 
-static int
+static const char*
 get_uppercase(int ucs)
 {
   VALUE ch = rb_hash_aref(unicode_data, INT2FIX(ucs));
 
   if (!NIL_P(ch)) {
-    int uc = unidata[FIX2INT(ch)].uppercase;
-    if (uc > 0) return uc;
+    return unidata[FIX2INT(ch)].uppercase;
   }
-  return ucs;
+  return NULL;
 }
 
-static int
+static const char*
 get_lowercase(int ucs)
 {
   VALUE ch = rb_hash_aref(unicode_data, INT2FIX(ucs));
 
   if (!NIL_P(ch)) {
-    int lc = unidata[FIX2INT(ch)].lowercase;
-    if (lc > 0) return lc;
+    return unidata[FIX2INT(ch)].lowercase;
   }
-  return ucs;
+  return NULL;
 }
 
-static int
+static const char*
 get_titlecase(int ucs)
 {
   VALUE ch = rb_hash_aref(unicode_data, INT2FIX(ucs));
 
   if (!NIL_P(ch)) {
-    int tc = unidata[FIX2INT(ch)].titlecase;
-    if (tc > 0) return tc;
+    return unidata[FIX2INT(ch)].titlecase;
   }
-  return ucs;
+  return NULL;
 }
 
 static int
@@ -352,46 +350,81 @@ compose_internal(WString* ustr, WString* result)
 }
 
 static WString*
-upcase_internal(WString* str)
+upcase_internal(WString* str, WString* result)
 {
   int i;
+  int len = str->len;
 
-  for (i = 0; i < str->len; i++) {
-    int uc = get_uppercase(str->str[i]);
-    if (uc > 0) str->str[i] = uc;
+  for (i = 0; i < len; i++) {
+    int ucs = str->str[i];
+    const char* c = get_uppercase(ucs);
+    if (!c) {
+      WStr_addWChar(result, ucs);
+    }
+    else {
+      WString wc;
+      WStr_allocWithUTF8(&wc, c);
+      WStr_pushWString(result, &wc);
+      WStr_free(&wc);
+    }
   }
-
-  return str;
+  return result;
 }
 
 static WString*
-downcase_internal(WString* str)
+downcase_internal(WString* str, WString* result)
 {
   int i;
+  int len = str->len;
 
-  for (i = 0; i < str->len; i++) {
-    int lc = get_lowercase(str->str[i]);
-    if (lc > 0) str->str[i] = lc;
+  for (i = 0; i < len; i++) {
+    int ucs = str->str[i];
+    const char* c = get_lowercase(ucs);
+    if (!c) {
+      WStr_addWChar(result, ucs);
+    }
+    else {
+      WString wc;
+      WStr_allocWithUTF8(&wc, c);
+      WStr_pushWString(result, &wc);
+      WStr_free(&wc);
+    }
   }
-
-  return str;
+  return result;
 }
 
 static WString*
-capitalize_internal(WString* str)
+capitalize_internal(WString* str,  WString* result)
 {
   int i;
+  int len = str->len;
 
-  if (str->len > 1) {
-    int tc = get_titlecase(str->str[0]);
-    if (tc > 0) str->str[0] = tc;
+  if (len > 0) {
+    const char* c = get_titlecase(str->str[0]);
+    if (!c) {
+      WStr_addWChar(result, str->str[0]);
+    }
+    else {
+      WString wc;
+      WStr_allocWithUTF8(&wc, c);
+      WStr_pushWString(result, &wc);
+      WStr_free(&wc);
+    }
   }
-  for (i = 1; i < str->len; i++) {
-    int lc = get_lowercase(str->str[i]);
-    if (lc > 0) str->str[i] = lc;
+  for (i = 1; i < len; i++) {
+    int ucs = str->str[i];
+    const char* c = get_lowercase(ucs);
+    if (!c) {
+      WStr_addWChar(result, ucs);
+    }
+    else {
+      WString wc;
+      WStr_allocWithUTF8(&wc, c);
+      WStr_pushWString(result, &wc);
+      WStr_free(&wc);
+    }
   }
-
-  return str;
+  return result;
 }
 
 static VALUE
@@ -620,6 +653,7 @@ static VALUE
 unicode_upcase(VALUE obj, VALUE str)
 {
   WString ustr;
+  WString result;
   UString ret;
   VALUE vret;
 
@@ -628,10 +662,13 @@ unicode_upcase(VALUE obj, VALUE str)
   CONVERT_TO_UTF8(str);
 #endif
   WStr_allocWithUTF8(&ustr, RSTRING_PTR(str));
-  upcase_internal(&ustr);
-  UniStr_alloc(&ret);
-  WStr_convertIntoUString(&ustr, &ret);
+  WStr_alloc(&result);
+  upcase_internal(&ustr, &result);
+  //sort_canonical(&result);
   WStr_free(&ustr);
+  UniStr_alloc(&ret);
+  WStr_convertIntoUString(&result, &ret);
+  WStr_free(&result);
   vret = TO_(str, ENC_(rb_str_new((char*)ret.str, ret.len)));
   UniStr_free(&ret);
 
@@ -642,6 +679,7 @@ static VALUE
 unicode_downcase(VALUE obj, VALUE str)
 {
   WString ustr;
+  WString result;
   UString ret;
   VALUE vret;
 
@@ -650,10 +688,13 @@ unicode_downcase(VALUE obj, VALUE str)
   CONVERT_TO_UTF8(str);
 #endif
   WStr_allocWithUTF8(&ustr, RSTRING_PTR(str));
-  downcase_internal(&ustr);
-  UniStr_alloc(&ret);
-  WStr_convertIntoUString(&ustr, &ret);
+  WStr_alloc(&result);
+  downcase_internal(&ustr, &result);
+  //sort_canonical(&result);
   WStr_free(&ustr);
+  UniStr_alloc(&ret);
+  WStr_convertIntoUString(&result, &ret);
+  WStr_free(&result);
   vret = TO_(str, ENC_(rb_str_new((char*)ret.str, ret.len)));
   UniStr_free(&ret);
 
@@ -669,6 +710,7 @@ static VALUE
 unicode_capitalize(VALUE obj, VALUE str)
 {
   WString ustr;
+  WString result;
   UString ret;
   VALUE vret;
 
@@ -677,10 +719,13 @@ unicode_capitalize(VALUE obj, VALUE str)
   CONVERT_TO_UTF8(str);
 #endif
   WStr_allocWithUTF8(&ustr, RSTRING_PTR(str));
-  capitalize_internal(&ustr);
-  UniStr_alloc(&ret);
-  WStr_convertIntoUString(&ustr, &ret);
+  WStr_alloc(&result);
+  capitalize_internal(&ustr, &result);
+  //sort_canonical(&result);
   WStr_free(&ustr);
+  UniStr_alloc(&ret);
+  WStr_convertIntoUString(&result, &ret);
+  WStr_free(&result);
   vret = TO_(str, ENC_(rb_str_new((char*)ret.str, ret.len)));
   UniStr_free(&ret);
 
