@@ -115,6 +115,10 @@ WStr_allocWithUTF8(WString* s, const char* in)
   int rest = 0;
 
   WStr_alloc(s);
+
+  if (in == 0)
+    return s;
+
   for (i = 0; in[i] != '\0'; i++) {
     unsigned char c = in[i];
     if (c >= 128 && c < 192) {
