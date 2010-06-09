@@ -7,12 +7,7 @@ Gem::Specification.new { |s|
   s.author           = %q{Yoshida Masato}
   s.email            = %q{yoshidam@yoshidam.net}
   s.homepage         = %q{http://www.yoshidam.net/Ruby.html#unicode}
-  s.files            = %w[
-    ext/unicode/extconf.rb ext/unicode/unicode.c ext/unicode/ustring.c
-    ext/unicode/ustring.h ext/unicode/wstring.c ext/unicode/wstring.h README
-    test.rb tools/mkunidata.rb tools/README ext/unicode/unidata.map
-    lib/unicode.rb
-  ]
+  s.files            = `git ls-files`.split("\n").reject {|f| f =~ /^\./}
   s.extra_rdoc_files = %w[README]
   s.extensions       = %w[ext/unicode/extconf.rb]
 }
