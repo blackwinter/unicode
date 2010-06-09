@@ -181,7 +181,7 @@ decompose_hangul(int ucs, int* l, int* v, int* t)
 }
 
 /*
- * push decomposed str into result 
+ * push decomposed str into result
  */
 static WString*
 decompose_internal(WString* ustr, WString* result)
@@ -215,7 +215,7 @@ decompose_internal(WString* ustr, WString* result)
 }
 
 /*
- * push compatibility decomposed str into result 
+ * push compatibility decomposed str into result
  */
 static WString*
 decompose_compat_internal(WString* ustr, WString* result)
@@ -313,7 +313,7 @@ compose_pair(unsigned int c1, unsigned int c2)
 }
 
 /*
- * push canonical composed str into result 
+ * push canonical composed str into result
  */
 static WString*
 compose_internal(WString* ustr, WString* result)
@@ -733,7 +733,7 @@ unicode_capitalize(VALUE obj, VALUE str)
 }
 
 void
-Init_unicode()
+Init_unicode_native()
 {
   int i;
 
