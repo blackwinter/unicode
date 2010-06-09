@@ -10,7 +10,7 @@ Rake::GemPackageTask.new(gem_spec) {|pkg|}
 
 Rake::ExtensionTask.new('unicode_native', gem_spec) do |ext|
   ext.cross_compile = true
-  ext.cross_platform = ['i386-mswin32', 'i386-mswin32-60']
+  ext.cross_platform = ['x86-mingw32', 'x86-mswin32-60']
   ext.ext_dir = "ext/unicode"
   ext.lib_dir = "lib/unicode"
 end
