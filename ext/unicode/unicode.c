@@ -1,6 +1,7 @@
 /*
- * Unicode Library version 0.3
- * FEb 26, 2010: version 0.3
+ * Unicode Library version 0.4
+ * Oct 14, 2010: version 0.4
+ * Feb 26, 2010: version 0.3
  * Dec 29, 2009: version 0.2
  * Nov 23, 1999 yoshidam
  *
@@ -318,6 +319,49 @@ compose_pair(unsigned int c1, unsigned int c2)
 static WString*
 compose_internal(WString* ustr, WString* result)
 {
+  int starterPos = 0;
+  int starterCh = ustr->str[0];
+  int compPos = 1;
+  int lastClass = get_cc(starterCh);
+  int oldLen = ustr->len;
+  int decompPos;
+
+  if (oldLen == 0) return result;
+  if (lastClass != 0) lastClass = 256;
+  /* copy string */
+  result->len = 0;
+  WStr_pushWString(result, ustr);
+
+  for (decompPos = compPos; decompPos < result->len; decompPos++) {
+    int ch = result->str[decompPos];
+    int chClass = get_cc(ch);
+    int composite = compose_pair(starterCh, ch);
+    if (composite > 0 && 
+        (lastClass < chClass ||lastClass == 0)) {
+      result->str[starterPos] = composite;
+      starterCh = composite;
+    }
+    else {
+      if (chClass == 0) {
+        starterPos = compPos;
+        starterCh = ch;
+      }
+      lastClass = chClass;
+      result->str[compPos] = ch;
+      if (result->len != oldLen) {
+        decompPos += result->len - oldLen;
+        oldLen = result->len;
+      }
+      compPos++;
+    }
+  }
+  result->len = compPos;
+  return result;
+}
+#if 0
+static WString*
+compose_internal(WString* ustr, WString* result)
+{
   int len = ustr->len;
   int starter;
   int startercc;
@@ -348,6 +392,7 @@ compose_internal(WString* ustr, WString* result)
 
   return result;
 }
+#endif
 
 static WString*
 upcase_internal(WString* str, WString* result)
@@ -778,6 +823,16 @@ Init_unicode_native()
   rb_define_module_function(mUnicode, "normalize_C",
 			    unicode_normalize_C, 1);
   rb_define_module_function(mUnicode, "normalize_KC",
+			    unicode_normalize_KC, 1);
+
+  /* aliases */
+  rb_define_module_function(mUnicode, "nfd",
+			    unicode_decompose, 1);
+  rb_define_module_function(mUnicode, "nfkd",
+			    unicode_decompose_compat, 1);
+  rb_define_module_function(mUnicode, "nfc",
+			    unicode_normalize_C, 1);
+  rb_define_module_function(mUnicode, "nfkc",
 			    unicode_normalize_KC, 1);
 
   rb_define_module_function(mUnicode, "upcase",
