@@ -11,3 +11,4 @@ ustring.h
 wstring.h
 ustring.c
 test.rb
+unicode.gemspec

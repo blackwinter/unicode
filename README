@@ -1,5 +1,5 @@
 		   Unicode Library for Ruby
-			Version 0.4.0
+			Version 0.4.1
 
 		       Yoshida Masato
 
@@ -23,6 +23,11 @@
     ruby extconf.rb
     make
     make install
+
+  To install using gem, for exapmle:
+
+    gem build unicdoe.gemspac
+    gem install unicode
 
 
 - Usage
@@ -106,6 +111,7 @@
 
 - History
 
+  Feb  3, 2012 version 0.4.1 update unidata.map for Unicode 6.1
   Oct 14, 2010 version 0.4.0 fix the composition algorithm, and support Unicode 6.0
   Feb 26, 2010 version 0.3.0 fix a capitalize bug and support SpecialCasing
   Dec 29, 2009 version 0.2.0 update for Ruby 1.9.1 and Unicode 5.2
