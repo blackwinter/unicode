@@ -1,5 +1,5 @@
 		   Unicode Library for Ruby
-			Version 0.4.1
+			Version 0.4.2
 
 		       Yoshida Masato
 
@@ -15,7 +15,7 @@
 - Install
 
   This can work with ruby-1.8 or later. I recommend you to
-  use ruby-1.9.2 or later.
+  use ruby-1.9.3 or later.
 
   Make and install usually.
   For example, when Ruby supports dynamic linking on your OS,
@@ -59,6 +59,11 @@
     mapping in UnicodeData.txt and the Hangul decomposition
     algorithm.
 
+  Unicode::decompose_safe(str)
+    Decompose Unicode string with a non-standard mapping.
+    It does not decompose the characters in
+    CompositionExclusions.txt.
+
   Unicode::compose(str)
     Compose Unicode string. Before composing, the trailing
     characters are sorted in canonical order.
@@ -73,11 +78,18 @@
     Normalize Unicode string in form D or form KD.
     These are aliases of decompose/decompose_compat.
 
+  Unicode::normalize_D_safe(str)  (Unicode::nfd_safe(str))
+    This is an aliase of decompose_safe.
+
   Unicode::normalize_C(str) (Unicode::nfc(str))
   Unicode::normalize_KC(str) (Unicode::nfkc(str))
     Normalize Unicode string in form C or form KC.
       normalize_C  = decompose + compose
       normalize_KC = decompose_compat + compose
+
+  Unicode::normalize_C_safe(str) (Unicode::nfc_safe(str))
+    Normalize Unicode string with decompose_safe.
+      normalize_C_safe  = decompose_safe + compose
 
   Unicode::upcase(str)
   Unicode::downcase(str)
@@ -111,6 +123,7 @@
 
 - History
 
+  Feb 29, 2012 version 0.4.2 add decompose_safe
   Feb  3, 2012 version 0.4.1 update unidata.map for Unicode 6.1
   Oct 14, 2010 version 0.4.0 fix the composition algorithm, and support Unicode 6.0
   Feb 26, 2010 version 0.3.0 fix a capitalize bug and support SpecialCasing

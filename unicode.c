@@ -7,6 +7,8 @@
  *
  */
 
+#define UNICODE_VERSION "0.4.2"
+
 #include "ruby.h"
 #ifdef HAVE_RUBY_IO_H
 #  include "ruby/io.h"
@@ -82,6 +84,19 @@ get_canon(int ucs)
 
   if (!NIL_P(ch)) {
     return unidata[FIX2INT(ch)].canon;
+  }
+  return NULL;
+}
+
+static const char*
+get_canon_ex(int ucs)
+{
+  VALUE ch = rb_hash_aref(unicode_data, INT2FIX(ucs));
+
+  if (!NIL_P(ch)) {
+    int i = FIX2INT(ch);
+    if (!unidata[i].exclusion)
+      return unidata[i].canon;
   }
   return NULL;
 }
@@ -208,6 +223,40 @@ decompose_internal(WString* ustr, WString* result)
 	WString wdc;
 	WStr_allocWithUTF8(&wdc, dc);
 	decompose_internal(&wdc, result);
+	WStr_free(&wdc);
+      }
+    }
+  }
+  return result;
+}
+
+/*
+ * push decomposed str into result 
+ */
+static WString*
+decompose_safe_internal(WString* ustr, WString* result)
+{
+  int i;
+  int len = ustr->len;
+
+  for (i = 0; i < len; i++) {
+    int ucs = ustr->str[i];
+    if (ucs >= SBASE && ucs < SBASE + SCOUNT) {
+      int l, v, t;
+      decompose_hangul(ucs, &l, &v, &t);
+      WStr_addWChar(result, l);
+      if (v) WStr_addWChar(result, v);
+      if (t) WStr_addWChar(result, t);
+    }
+    else {
+      const char* dc = get_canon_ex(ucs);
+      if (!dc) {
+	WStr_addWChar(result, ucs);
+      }
+      else {
+	WString wdc;
+	WStr_allocWithUTF8(&wdc, dc);
+	decompose_safe_internal(&wdc, result);
 	WStr_free(&wdc);
       }
     }
@@ -583,6 +632,32 @@ unicode_decompose(VALUE obj, VALUE str)
 }
 
 static VALUE
+unicode_decompose_safe(VALUE obj, VALUE str)
+{
+  WString ustr;
+  WString result;
+  UString ret;
+  VALUE vret;
+
+  Check_Type(str, T_STRING);
+#ifdef HAVE_RUBY_ENCODING_H
+  CONVERT_TO_UTF8(str);
+#endif
+  WStr_allocWithUTF8(&ustr, RSTRING_PTR(str));
+  WStr_alloc(&result);
+  decompose_safe_internal(&ustr, &result);
+  WStr_free(&ustr);
+  sort_canonical(&result);
+  UniStr_alloc(&ret);
+  WStr_convertIntoUString(&result, &ret);
+  WStr_free(&result);
+  vret = TO_(str, ENC_(rb_str_new((char*)ret.str, ret.len)));
+  UniStr_free(&ret);
+
+  return vret;
+}
+
+static VALUE
 unicode_decompose_compat(VALUE obj, VALUE str)
 {
   WString ustr;
@@ -650,6 +725,36 @@ unicode_normalize_C(VALUE obj, VALUE str)
   WStr_allocWithUTF8(&ustr1, RSTRING_PTR(str));
   WStr_alloc(&ustr2);
   decompose_internal(&ustr1, &ustr2);
+  WStr_free(&ustr1);
+  sort_canonical(&ustr2);
+  WStr_alloc(&result);
+  compose_internal(&ustr2, &result);
+  WStr_free(&ustr2);
+  UniStr_alloc(&ret);
+  WStr_convertIntoUString(&result, &ret);
+  WStr_free(&result);
+  vret = TO_(str, ENC_(rb_str_new((char*)ret.str, ret.len)));
+  UniStr_free(&ret);
+
+  return vret;
+}
+
+static VALUE
+unicode_normalize_safe(VALUE obj, VALUE str)
+{
+  WString ustr1;
+  WString ustr2;
+  WString result;
+  UString ret;
+  VALUE vret;
+
+  Check_Type(str, T_STRING);
+#ifdef HAVE_RUBY_ENCODING_H
+  CONVERT_TO_UTF8(str);
+#endif
+  WStr_allocWithUTF8(&ustr1, RSTRING_PTR(str));
+  WStr_alloc(&ustr2);
+  decompose_safe_internal(&ustr1, &ustr2);
   WStr_free(&ustr1);
   sort_canonical(&ustr2);
   WStr_alloc(&result);
@@ -811,6 +916,8 @@ Init_unicode()
 
   rb_define_module_function(mUnicode, "decompose",
 			    unicode_decompose, 1);
+  rb_define_module_function(mUnicode, "decompose_safe",
+			    unicode_decompose_safe, 1);
   rb_define_module_function(mUnicode, "decompose_compat",
 			    unicode_decompose_compat, 1);
   rb_define_module_function(mUnicode, "compose",
@@ -818,20 +925,28 @@ Init_unicode()
 
   rb_define_module_function(mUnicode, "normalize_D",
 			    unicode_decompose, 1);
+  rb_define_module_function(mUnicode, "normalize_D_safe",
+			    unicode_decompose_safe, 1);
   rb_define_module_function(mUnicode, "normalize_KD",
 			    unicode_decompose_compat, 1);
   rb_define_module_function(mUnicode, "normalize_C",
 			    unicode_normalize_C, 1);
+  rb_define_module_function(mUnicode, "normalize_C_safe",
+			    unicode_normalize_safe, 1);
   rb_define_module_function(mUnicode, "normalize_KC",
 			    unicode_normalize_KC, 1);
 
   /* aliases */
   rb_define_module_function(mUnicode, "nfd",
 			    unicode_decompose, 1);
+  rb_define_module_function(mUnicode, "nfd_safe",
+			    unicode_decompose_safe, 1);
   rb_define_module_function(mUnicode, "nfkd",
 			    unicode_decompose_compat, 1);
   rb_define_module_function(mUnicode, "nfc",
 			    unicode_normalize_C, 1);
+  rb_define_module_function(mUnicode, "nfc_safe",
+			    unicode_normalize_safe, 1);
   rb_define_module_function(mUnicode, "nfkc",
 			    unicode_normalize_KC, 1);
 
@@ -841,4 +956,7 @@ Init_unicode()
 			    unicode_downcase, 1);
   rb_define_module_function(mUnicode, "capitalize",
 			    unicode_capitalize, 1);
+
+  rb_define_const(mUnicode, "VERSION",
+		  rb_str_new2(UNICODE_VERSION));
 }
