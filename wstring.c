@@ -43,7 +43,10 @@ WStr_free(WString* str)
 {
   str->size = 0;
   str->len = 0;
-  free(str->str);
+  if (str->str) {
+    free(str->str);
+    str->str = NULL;
+  }
 }
 
 int
@@ -164,12 +167,77 @@ WStr_allocWithUTF8(WString* s, const char* in)
   return s;
 }
 
+WString*
+WStr_allocWithUTF8L(WString* s, const char* in, int len)
+{
+  int i;
+  int u = 0;
+  int rest = 0;
+
+  WStr_alloc(s);
+  if (in == NULL)
+    return s;
+  for (i = 0; i < len; i++) {
+    unsigned char c = in[i];
+    if ((c & 0xc0) == 0x80) {
+      if (rest == 0)
+	return NULL;
+      u = (u << 6) | (c & 63);
+      rest--;
+      if (rest == 0) {
+	WStr_addWChar(s, u);
+      }
+    }
+    else if ((c & 0x80) == 0) {      /* 0b0nnnnnnn (7bit) */
+      WStr_addWChar(s, c);
+      rest = 0;
+    }
+    else if ((c & 0xe0) == 0xc0) {      /* 0b110nnnnn (11bit) */
+      rest = 1;
+      u = c & 31;
+    }
+    else if ((c & 0xf0) == 0xe0) {      /* 0b1110nnnn (16bit) */
+      rest = 2;
+      u = c & 15;
+    }
+    else if ((c & 0xf8) == 0xf0) {      /* 0b11110nnn (21bit) */
+      rest = 3;
+      u = c & 7;
+    }
+    else if ((c & 0xfc) == 0xf8) {      /* 0b111110nn (26bit) */
+      rest = 4;
+      u = c & 3;
+    }
+    else if ((c & 0xfe) == 0xfc) {      /* 0b1111110n (31bit) */
+      rest = 5;
+      u = c & 1;
+    }
+    else {
+      return NULL;
+    }
+  }
+
+  return s;
+}
+
 UString*
 WStr_convertIntoUString(WString* wstr, UString* ustr)
 {
   int i;
 
   for (i = 0; i < wstr->len; i++) {
+    UniStr_addWChar(ustr, wstr->str[i]);
+  }
+
+  return ustr;
+}
+
+UString*
+WStr_convertIntoUString2(WString* wstr, int start, int len, UString* ustr)
+{
+  int i;
+
+  for (i = start; i < wstr->len && i < start + len; i++) {
     UniStr_addWChar(ustr, wstr->str[i]);
   }
 

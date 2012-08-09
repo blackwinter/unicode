@@ -1,5 +1,6 @@
 /*
- * Unicode Library version 0.4
+ * Unicode Library version 0.4.3
+ * Aug  8, 2012: version 0.4
  * Oct 14, 2010: version 0.4
  * Feb 26, 2010: version 0.3
  * Dec 29, 2009: version 0.2
@@ -7,7 +8,7 @@
  *
  */
 
-#define UNICODE_VERSION "0.4.2"
+#define UNICODE_VERSION "0.4.3"
 
 #include "ruby.h"
 #ifdef HAVE_RUBY_IO_H
@@ -54,6 +55,8 @@ taintObject(VALUE src, VALUE obj) {
 static VALUE mUnicode;
 static VALUE unicode_data;
 static VALUE composition_table;
+static VALUE catname_long[c_Cn+1];
+static VALUE catname_abbr[c_Cn+1];
 
 /* Hangul */
 #define SBASE   (0xac00)
@@ -66,6 +69,86 @@ static VALUE composition_table;
 #define NCOUNT  (VCOUNT * TCOUNT) /* 588 */
 #define SCOUNT  (LCOUNT * NCOUNT) /* 11172 */
 
+VALUE
+get_unidata(int ucs) {
+  VALUE ch = rb_hash_aref(unicode_data, INT2FIX(ucs));
+  if (!NIL_P(ch))
+    return ch;
+#ifdef CJK_IDEOGRAPH_EXTENSION_A_FIRST
+  else if (ucs >= CJK_IDEOGRAPH_EXTENSION_A_FIRST &&
+           ucs <= CJK_IDEOGRAPH_EXTENSION_A_LAST)
+    return rb_hash_aref(unicode_data,
+                        INT2FIX(CJK_IDEOGRAPH_EXTENSION_A_FIRST));
+#endif
+#ifdef CJK_IDEOGRAPH_FIRST
+  else if (ucs >= CJK_IDEOGRAPH_FIRST &&
+           ucs <= CJK_IDEOGRAPH_LAST)
+    return rb_hash_aref(unicode_data,
+                        INT2FIX(CJK_IDEOGRAPH_FIRST));
+#endif
+#ifdef HANGUL_SYLLABLE_FIRST
+  else if (ucs >= HANGUL_SYLLABLE_FIRST &&
+           ucs <= HANGUL_SYLLABLE_LAST)
+    return rb_hash_aref(unicode_data,
+                        INT2FIX(HANGUL_SYLLABLE_FIRST));
+#endif
+#ifdef NON_PRIVATE_USE_HIGH_SURROGATE_FIRST
+  else if (ucs >= NON_PRIVATE_USE_HIGH_SURROGATE_FIRST &&
+           ucs <= NON_PRIVATE_USE_HIGH_SURROGATE_LAST)
+    return rb_hash_aref(unicode_data,
+                        INT2FIX(NON_PRIVATE_USE_HIGH_SURROGATE_FIRST));
+#endif
+#ifdef PRIVATE_USE_HIGH_SURROGATE_FIRST
+  else if (ucs >= PRIVATE_USE_HIGH_SURROGATE_FIRST &&
+           ucs <= PRIVATE_USE_HIGH_SURROGATE_LAST)
+    return rb_hash_aref(unicode_data,
+                        INT2FIX(PRIVATE_USE_HIGH_SURROGATE_FIRST));
+#endif
+#ifdef LOW_SURROGATE_FIRST
+  else if (ucs >= LOW_SURROGATE_FIRST &&
+           ucs <= LOW_SURROGATE_LAST)
+    return rb_hash_aref(unicode_data,
+                        INT2FIX(LOW_SURROGATE_FIRST));
+#endif
+#ifdef PRIVATE_USE_FIRST
+  else if (ucs >= PRIVATE_USE_FIRST &&
+           ucs <= PRIVATE_USE_LAST)
+    return rb_hash_aref(unicode_data,
+                        INT2FIX(PRIVATE_USE_FIRST));
+#endif
+#ifdef CJK_IDEOGRAPH_EXTENSION_B_FIRST
+  else if (ucs >= CJK_IDEOGRAPH_EXTENSION_B_FIRST &&
+           ucs <= CJK_IDEOGRAPH_EXTENSION_B_LAST)
+    return rb_hash_aref(unicode_data,
+                        INT2FIX(CJK_IDEOGRAPH_EXTENSION_B_FIRST));
+#endif
+#ifdef CJK_IDEOGRAPH_EXTENSION_C_FIRST
+  else if (ucs >= CJK_IDEOGRAPH_EXTENSION_C_FIRST &&
+           ucs <= CJK_IDEOGRAPH_EXTENSION_C_LAST)
+    return rb_hash_aref(unicode_data,
+                        INT2FIX(CJK_IDEOGRAPH_EXTENSION_C_FIRST));
+#endif
+#ifdef CJK_IDEOGRAPH_EXTENSION_D_FIRST
+  else if (ucs >= CJK_IDEOGRAPH_EXTENSION_D_FIRST &&
+           ucs <= CJK_IDEOGRAPH_EXTENSION_D_LAST)
+    return rb_hash_aref(unicode_data,
+                        INT2FIX(CJK_IDEOGRAPH_EXTENSION_D_FIRST));
+#endif
+#ifdef PLANE_15_PRIVATE_USE_FIRST
+  else if (ucs >= PLANE_15_PRIVATE_USE_FIRST &&
+           ucs <= PLANE_15_PRIVATE_USE_LAST)
+    return rb_hash_aref(unicode_data,
+                        INT2FIX(PLANE_15_PRIVATE_USE_FIRST));
+#endif
+#ifdef PLANE_16_PRIVATE_USE_FIRST
+  else if (ucs >= PLANE_16_PRIVATE_USE_FIRST &&
+           ucs <= PLANE_16_PRIVATE_USE_LAST)
+    return rb_hash_aref(unicode_data,
+                        INT2FIX(PLANE_16_PRIVATE_USE_FIRST));
+#endif
+  return Qnil;
+}
+
 static int
 get_cc(int ucs)
 {
@@ -75,6 +158,28 @@ get_cc(int ucs)
     return unidata[FIX2INT(ch)].combining_class;
   }
   return 0;
+}
+
+static int
+get_gencat(int ucs)
+{
+  VALUE ch = get_unidata(ucs);
+
+  if (!NIL_P(ch)) {
+    return unidata[FIX2INT(ch)].general_category;
+  }
+  return c_Cn; /* Unassigned */
+}
+
+static int
+get_eawidth(int ucs)
+{
+  VALUE ch = get_unidata(ucs);
+
+  if (!NIL_P(ch)) {
+    return unidata[FIX2INT(ch)].east_asian_width;
+  }
+  return w_N; /* Neutral */
 }
 
 static const char*
@@ -538,8 +643,8 @@ unicode_strcmp(VALUE obj, VALUE str1, VALUE str2)
   CONVERT_TO_UTF8(str1);
   CONVERT_TO_UTF8(str2);
 #endif
-  WStr_allocWithUTF8(&wstr1, RSTRING_PTR(str1));
-  WStr_allocWithUTF8(&wstr2, RSTRING_PTR(str2));
+  WStr_allocWithUTF8L(&wstr1, RSTRING_PTR(str1), RSTRING_LEN(str1));
+  WStr_allocWithUTF8L(&wstr2, RSTRING_PTR(str2), RSTRING_LEN(str2));
   WStr_alloc(&result1);
   WStr_alloc(&result2);
   decompose_internal(&wstr1, &result1);
@@ -580,8 +685,8 @@ unicode_strcmp_compat(VALUE obj, VALUE str1, VALUE str2)
   CONVERT_TO_UTF8(str1);
   CONVERT_TO_UTF8(str2);
 #endif
-  WStr_allocWithUTF8(&wstr1, RSTRING_PTR(str1));
-  WStr_allocWithUTF8(&wstr2, RSTRING_PTR(str2));
+  WStr_allocWithUTF8L(&wstr1, RSTRING_PTR(str1), RSTRING_LEN(str1));
+  WStr_allocWithUTF8L(&wstr2, RSTRING_PTR(str2), RSTRING_LEN(str2));
   WStr_alloc(&result1);
   WStr_alloc(&result2);
   decompose_compat_internal(&wstr1, &result1);
@@ -617,7 +722,7 @@ unicode_decompose(VALUE obj, VALUE str)
 #ifdef HAVE_RUBY_ENCODING_H
   CONVERT_TO_UTF8(str);
 #endif
-  WStr_allocWithUTF8(&ustr, RSTRING_PTR(str));
+  WStr_allocWithUTF8L(&ustr, RSTRING_PTR(str), RSTRING_LEN(str));
   WStr_alloc(&result);
   decompose_internal(&ustr, &result);
   WStr_free(&ustr);
@@ -643,7 +748,7 @@ unicode_decompose_safe(VALUE obj, VALUE str)
 #ifdef HAVE_RUBY_ENCODING_H
   CONVERT_TO_UTF8(str);
 #endif
-  WStr_allocWithUTF8(&ustr, RSTRING_PTR(str));
+  WStr_allocWithUTF8L(&ustr, RSTRING_PTR(str), RSTRING_LEN(str));
   WStr_alloc(&result);
   decompose_safe_internal(&ustr, &result);
   WStr_free(&ustr);
@@ -669,7 +774,7 @@ unicode_decompose_compat(VALUE obj, VALUE str)
 #ifdef HAVE_RUBY_ENCODING_H
   CONVERT_TO_UTF8(str);
 #endif
-  WStr_allocWithUTF8(&ustr, RSTRING_PTR(str));
+  WStr_allocWithUTF8L(&ustr, RSTRING_PTR(str), RSTRING_LEN(str));
   WStr_alloc(&result);
   decompose_compat_internal(&ustr, &result);
   WStr_free(&ustr);
@@ -695,7 +800,7 @@ unicode_compose(VALUE obj, VALUE str)
 #ifdef HAVE_RUBY_ENCODING_H
   CONVERT_TO_UTF8(str);
 #endif
-  WStr_allocWithUTF8(&ustr, RSTRING_PTR(str));
+  WStr_allocWithUTF8L(&ustr, RSTRING_PTR(str), RSTRING_LEN(str));
   sort_canonical(&ustr);
   WStr_alloc(&result);
   compose_internal(&ustr, &result);
@@ -722,7 +827,7 @@ unicode_normalize_C(VALUE obj, VALUE str)
 #ifdef HAVE_RUBY_ENCODING_H
   CONVERT_TO_UTF8(str);
 #endif
-  WStr_allocWithUTF8(&ustr1, RSTRING_PTR(str));
+  WStr_allocWithUTF8L(&ustr1, RSTRING_PTR(str), RSTRING_LEN(str));
   WStr_alloc(&ustr2);
   decompose_internal(&ustr1, &ustr2);
   WStr_free(&ustr1);
@@ -752,7 +857,7 @@ unicode_normalize_safe(VALUE obj, VALUE str)
 #ifdef HAVE_RUBY_ENCODING_H
   CONVERT_TO_UTF8(str);
 #endif
-  WStr_allocWithUTF8(&ustr1, RSTRING_PTR(str));
+  WStr_allocWithUTF8L(&ustr1, RSTRING_PTR(str), RSTRING_LEN(str));
   WStr_alloc(&ustr2);
   decompose_safe_internal(&ustr1, &ustr2);
   WStr_free(&ustr1);
@@ -782,7 +887,7 @@ unicode_normalize_KC(VALUE obj, VALUE str)
 #ifdef HAVE_RUBY_ENCODING_H
   CONVERT_TO_UTF8(str);
 #endif
-  WStr_allocWithUTF8(&ustr1, RSTRING_PTR(str));
+  WStr_allocWithUTF8L(&ustr1, RSTRING_PTR(str), RSTRING_LEN(str));
   WStr_alloc(&ustr2);
   decompose_compat_internal(&ustr1, &ustr2);
   WStr_free(&ustr1);
@@ -811,7 +916,7 @@ unicode_upcase(VALUE obj, VALUE str)
 #ifdef HAVE_RUBY_ENCODING_H
   CONVERT_TO_UTF8(str);
 #endif
-  WStr_allocWithUTF8(&ustr, RSTRING_PTR(str));
+  WStr_allocWithUTF8L(&ustr, RSTRING_PTR(str), RSTRING_LEN(str));
   WStr_alloc(&result);
   upcase_internal(&ustr, &result);
   //sort_canonical(&result);
@@ -837,7 +942,7 @@ unicode_downcase(VALUE obj, VALUE str)
 #ifdef HAVE_RUBY_ENCODING_H
   CONVERT_TO_UTF8(str);
 #endif
-  WStr_allocWithUTF8(&ustr, RSTRING_PTR(str));
+  WStr_allocWithUTF8L(&ustr, RSTRING_PTR(str), RSTRING_LEN(str));
   WStr_alloc(&result);
   downcase_internal(&ustr, &result);
   //sort_canonical(&result);
@@ -868,7 +973,7 @@ unicode_capitalize(VALUE obj, VALUE str)
 #ifdef HAVE_RUBY_ENCODING_H
   CONVERT_TO_UTF8(str);
 #endif
-  WStr_allocWithUTF8(&ustr, RSTRING_PTR(str));
+  WStr_allocWithUTF8L(&ustr, RSTRING_PTR(str), RSTRING_LEN(str));
   WStr_alloc(&result);
   capitalize_internal(&ustr, &result);
   //sort_canonical(&result);
@@ -880,6 +985,248 @@ unicode_capitalize(VALUE obj, VALUE str)
   UniStr_free(&ret);
 
   return vret;
+}
+
+typedef struct _get_categories_param {
+  WString* wstr;
+  VALUE str;
+  VALUE* catname;
+} get_categories_param;
+
+static VALUE
+get_categories_internal(get_categories_param* param)
+{
+  WString* wstr = param->wstr;
+  VALUE str = param->str;
+  VALUE* catname = param->catname;
+  int pos;
+  int block_p = rb_block_given_p();
+  volatile VALUE ret = str;
+
+  if (!block_p)
+    ret = rb_ary_new();
+  for (pos = 0; pos < wstr->len; pos++) {
+    int gencat = get_gencat(wstr->str[pos]);
+    if (!block_p)
+      rb_ary_push(ret, catname[gencat]);
+    else {
+      rb_yield(catname[gencat]);
+    }
+  }
+ 
+  return ret;
+}
+
+VALUE
+get_categories_ensure(WString* wstr)
+{
+  WStr_free(wstr);
+  return Qnil;
+}
+
+VALUE
+unicode_get_categories(VALUE obj, VALUE str)
+{
+  WString wstr;
+  get_categories_param param = { &wstr, str, catname_long };
+
+  Check_Type(str, T_STRING);
+#ifdef HAVE_RUBY_ENCODING_H
+  CONVERT_TO_UTF8(str);
+#endif
+  WStr_allocWithUTF8L(&wstr, RSTRING_PTR(str), RSTRING_LEN(str));
+
+  return rb_ensure(get_categories_internal, (VALUE)&param,
+                   get_categories_ensure, (VALUE)&wstr);
+  /* wstr will be freed in get_text_elements_ensure() */
+}
+
+
+VALUE
+unicode_get_abbr_categories(VALUE obj, VALUE str)
+{
+  WString wstr;
+  get_categories_param param = { &wstr, str, catname_abbr };
+
+  Check_Type(str, T_STRING);
+#ifdef HAVE_RUBY_ENCODING_H
+  CONVERT_TO_UTF8(str);
+#endif
+  WStr_allocWithUTF8L(&wstr, RSTRING_PTR(str), RSTRING_LEN(str));
+
+  return rb_ensure(get_categories_internal, (VALUE)&param,
+                   get_categories_ensure, (VALUE)&wstr);
+  /* wstr will be freed in get_text_elements_ensure() */
+}
+
+VALUE
+unicode_wcswidth(int argc, VALUE* argv, VALUE obj)
+{
+  WString wstr;
+  int i, count;
+  int width = 0;
+  int cjk_p = 0;
+  VALUE str;
+  VALUE cjk;
+
+  count = rb_scan_args(argc, argv, "11", &str, &cjk);
+  if (count > 1)
+    cjk_p = RTEST(cjk);
+  Check_Type(str, T_STRING);
+#ifdef HAVE_RUBY_ENCODING_H
+  CONVERT_TO_UTF8(str);
+#endif
+  WStr_allocWithUTF8L(&wstr, RSTRING_PTR(str), RSTRING_LEN(str));
+  for (i = 0; i <wstr.len; i++) {
+    int c = wstr.str[i];
+    int cat = get_gencat(c);
+    int eaw = get_eawidth(c);
+    if ((c > 0 && c < 32) || (c >= 0x7f && c < 0xa0)) {
+      /* Control Characters */
+      width = -1;
+      break;
+    }
+    else if (c != 0x00ad && /* SOFT HYPHEN */
+             (cat == c_Mn || cat == c_Me || /* Non-spacing Marks */
+              cat == c_Cf || /* Format */
+              c == 0 || /* NUL */
+              (c >= 0x1160 && c <= 0x11ff))) /* HANGUL JUNGSEONG/JONGSEONG */
+      /* zero width */ ;
+    else if (eaw == w_F || eaw == w_W || /* Fullwidth or Wide */
+             (c >= 0x4db6 && c <= 0x4dbf) || /* CJK Reserved */
+             (c >= 0x9fcd && c <= 0x9fff) || /* CJK Reserved */
+             (c >= 0xfa6e && c <= 0xfa6f) || /* CJK Reserved */
+             (c >= 0xfada && c <= 0xfaff) || /* CJK Reserved */
+             (c >= 0x2a6d7 && c <= 0x2a6ff) || /* CJK Reserved */
+             (c >= 0x2b735 && c <= 0x2b73f) || /* CJK Reserved */
+             (c >= 0x2b81e && c <= 0x2f7ff) || /* CJK Reserved */
+             (c >= 0x2fa1e && c <= 0x2fffd) || /* CJK Reserved */
+             (c >= 0x30000 && c <= 0x3fffd) || /* CJK Reserved */
+             (cjk_p && eaw == w_A)) /* East Asian Ambiguous */
+      width += 2;
+    else
+      width++; /* Halfwidth or Neutral */
+  }
+  WStr_free(&wstr);
+
+  return INT2FIX(width);
+}
+
+VALUE
+wstring_to_rstring(WString* wstr, int start, int len) {
+  UString ret;
+  volatile VALUE vret;
+
+  UniStr_alloc(&ret);
+  WStr_convertIntoUString2(wstr, start, len, &ret);
+  vret = ENC_(rb_str_new((char*)ret.str, ret.len));
+  UniStr_free(&ret);
+
+  return vret;
+}
+
+typedef struct _get_text_elements_param {
+  WString* wstr;
+  VALUE str;
+} get_text_elements_param;
+
+VALUE
+get_text_elements_internal(get_text_elements_param* param)
+{
+  WString* wstr = param->wstr;
+  VALUE str = param->str;
+  int start_pos;
+  int block_p = rb_block_given_p();
+  volatile VALUE ret = str;
+
+  if (!block_p)
+    ret = rb_ary_new();
+  for (start_pos = 0; start_pos < wstr->len;) {
+    int c0 = wstr->str[start_pos];
+    int cat = get_gencat(c0);
+    int length = 1;
+    int j;
+
+    if (cat == c_Mn || cat == c_Mc || cat == c_Me) {
+      volatile VALUE rstr = TO_(str, wstring_to_rstring(wstr, start_pos, length));
+      if (!block_p)
+        rb_ary_push(ret, rstr);
+      else
+        rb_yield(rstr);
+      start_pos++;
+      continue;
+    }
+
+    for (j = start_pos + 1; j < wstr->len; j++) {
+      int c1 = wstr->str[j];
+      int cat = get_gencat(c1);
+      if (c0 >= LBASE && c0 < LBASE + LCOUNT &&
+          j + 1 < wstr->len &&
+          c1 >= VBASE && c1 < VBASE + VCOUNT &&
+          wstr->str[j+1] >= TBASE && wstr->str[j+1] < TBASE + TCOUNT) {
+        /* Hangul L+V+T */
+        length += 2;
+        j++;
+      }
+      else if (c0 >= LBASE && c0 < LBASE + LCOUNT &&
+               c1 >= VBASE && c1< VBASE + VCOUNT) {
+        /* Hangul L+V */
+        length++;
+      }
+      else if (c0 >= SBASE && c0 < SBASE + SCOUNT &&
+               (c0 - SBASE) % TCOUNT == 0 &&
+               c1 >= TBASE && c1 < TBASE + TCOUNT) {
+        /* Hangul LV+T */
+        length++;
+      }
+      else if (cat == c_Mn || cat == c_Mc || cat == c_Me) {
+        /* Mark */
+        length++;
+      }
+      else {
+        volatile VALUE rstr = TO_(str, wstring_to_rstring(wstr, start_pos, length));
+        if (!block_p)
+          rb_ary_push(ret, rstr);
+        else
+          rb_yield(rstr);
+        length = 0;
+        break;
+      }
+    }
+    if (length > 0) {
+      volatile VALUE rstr = TO_(str, wstring_to_rstring(wstr, start_pos, length));
+      if (!block_p)
+        rb_ary_push(ret, rstr);
+      else
+        rb_yield(rstr);
+    }
+    start_pos = j;
+  }
+  return ret;
+}
+
+VALUE
+get_text_elements_ensure(WString* wstr)
+{
+  WStr_free(wstr);
+  return Qnil;
+}
+
+VALUE
+unicode_get_text_elements(VALUE obj, VALUE str)
+{
+  WString wstr;
+  get_text_elements_param param = { &wstr, str };
+
+  Check_Type(str, T_STRING);
+#ifdef HAVE_RUBY_ENCODING_H
+  CONVERT_TO_UTF8(str);
+#endif
+  WStr_allocWithUTF8L(&wstr, RSTRING_PTR(str), RSTRING_LEN(str));
+
+  return rb_ensure(get_text_elements_internal, (VALUE)&param,
+                   get_text_elements_ensure, (VALUE)&wstr);
+  /* wstr will be freed in get_text_elements_ensure() */
 }
 
 void
@@ -907,6 +1254,13 @@ Init_unicode()
     if (canon && exclusion == 0) {
       rb_hash_aset(composition_table, rb_str_new2(canon), INT2FIX(code));
     }
+  }
+
+  for (i = 0; i < c_Cn + 1; i++) {
+    catname_abbr[i] = ID2SYM(rb_intern(gencat_abbr[i]));
+    catname_long[i] = ID2SYM(rb_intern(gencat_long[i]));
+    rb_global_variable(&catname_abbr[i]);
+    rb_global_variable(&catname_long[i]);
   }
 
   rb_define_module_function(mUnicode, "strcmp",
@@ -956,6 +1310,15 @@ Init_unicode()
 			    unicode_downcase, 1);
   rb_define_module_function(mUnicode, "capitalize",
 			    unicode_capitalize, 1);
+
+  rb_define_module_function(mUnicode, "categories",
+			    unicode_get_categories, 1);
+  rb_define_module_function(mUnicode, "abbr_categories",
+			    unicode_get_abbr_categories, 1);
+  rb_define_module_function(mUnicode, "width",
+			    unicode_wcswidth, -1);
+  rb_define_module_function(mUnicode, "text_elements",
+			    unicode_get_text_elements, 1);
 
   rb_define_const(mUnicode, "VERSION",
 		  rb_str_new2(UNICODE_VERSION));

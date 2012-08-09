@@ -1,5 +1,5 @@
 		   Unicode Library for Ruby
-			Version 0.4.2
+			Version 0.4.3
 
 		       Yoshida Masato
 
@@ -7,14 +7,14 @@
 - Introduction
 
   Unicode string manipulation library for Ruby.
-  This library is based on UTR #15 Unicode Normalization Forms(*1).
+  This library is based on UAX #15 Unicode Normalization Forms(*1).
 
     *1 <URL:http://www.unicode.org/unicode/reports/tr15/>
 
 
 - Install
 
-  This can work with ruby-1.8 or later. I recommend you to
+  This can work with ruby-1.8.7 or later. I recommend you to
   use ruby-1.9.3 or later.
 
   Make and install usually.
@@ -79,7 +79,7 @@
     These are aliases of decompose/decompose_compat.
 
   Unicode::normalize_D_safe(str)  (Unicode::nfd_safe(str))
-    This is an aliase of decompose_safe.
+    This is an alias of decompose_safe.
 
   Unicode::normalize_C(str) (Unicode::nfc(str))
   Unicode::normalize_KC(str) (Unicode::nfkc(str))
@@ -98,13 +98,34 @@
     The mappings that are used by these functions are not normative
     in UnicodeData.txt.
 
+  Unicode::categories(str)
+  Unicode::abbr_categories(str)
+    Get an array of general category names of the string.
+    get_abbr_categories returns abbreviated names.
+    These can be called with a block.
+
+      Unicode.get_category do |category| p category end
+
+  Unicode::text_elements(str)
+    Get an array of text elements.
+    A text element is a unit that is displayed as a single character.
+    These can be called with a block.
+
+  Unicode::width(str[, cjk])
+    Estimate the display width on the fixed pitch text terminal.
+    It based on Markus Kuhn's mk_wcwidth.
+    If the optional argument 'cjk' is true, East Asian
+    Ambiguous characters are treated as wide characters.
+
+      Unicode.width("\u03b1") #=> 1
+      Unicode.width("\u03b1", true) #=> 2
+
+
 - Bugs
 
-  UTR #15 suggests that the look up for Normalization Form C
+  UAX #15 suggests that the look up for Normalization Form C
   should not be implemented with a hash of string for better
   performance.
-
-  Case conversion functions should reflecte UTR #21.
 
 
 - Copying
@@ -123,6 +144,7 @@
 
 - History
 
+  Aug  8, 2012 version 0.4.3 add categories, text_elements and width
   Feb 29, 2012 version 0.4.2 add decompose_safe
   Feb  3, 2012 version 0.4.1 update unidata.map for Unicode 6.1
   Oct 14, 2010 version 0.4.0 fix the composition algorithm, and support Unicode 6.0
