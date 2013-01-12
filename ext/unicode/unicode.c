@@ -1230,7 +1230,7 @@ unicode_get_text_elements(VALUE obj, VALUE str)
 }
 
 void
-Init_unicode()
+Init_unicode_native()
 {
   int i;
 
