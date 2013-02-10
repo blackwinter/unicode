@@ -1,5 +1,5 @@
 		   Unicode Library for Ruby
-			Version 0.4.3
+			Version 0.4.4
 
 		       Yoshida Masato
 
@@ -144,6 +144,7 @@
 
 - History
 
+  Feb  7, 2013 version 0.4.4 update unidata.map for Unicode 6.2
   Aug  8, 2012 version 0.4.3 add categories, text_elements and width
   Feb 29, 2012 version 0.4.2 add decompose_safe
   Feb  3, 2012 version 0.4.1 update unidata.map for Unicode 6.1
