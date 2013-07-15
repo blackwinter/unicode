@@ -8,6 +8,7 @@ Gem::Specification.new do |s|
   s.authors = [%q{Yoshida Masato}]
   s.date = %q{2013-02-07}
   s.email = %q{yoshidam@yoshidam.net}
+  s.licenses = %w[Ruby]
   s.extensions = %w[ext/unicode/extconf.rb]
   s.extra_rdoc_files = [%q{README}]
   s.files = %w[
