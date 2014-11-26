@@ -8,7 +8,7 @@ UPSTREAM_URL = 'http://www.yoshidam.net/unicode-%s.tar.gz'
 
 gem_spec = eval(File.read(File.expand_path("../unicode.gemspec", __FILE__)))
 
-Gem::PackageTask.new(gem_spec) {|pkg|}
+gem_task = Gem::PackageTask.new(gem_spec) {|pkg|}
 
 Rake::ExtensionTask.new('unicode_native', gem_spec) do |ext|
   ext.cross_compile = true
@@ -17,11 +17,62 @@ Rake::ExtensionTask.new('unicode_native', gem_spec) do |ext|
   ext.lib_dir = "lib/unicode"
 end
 
-desc "Build native gems for Windows"
-task :windows_gem => :clean do
-  ENV["RUBY_CC_VERSION"] = "1.8.7:1.9.3"
-  sh "rake cross compile"
-  sh "rake cross native gem"
+namespace :gem do
+
+  desc 'Build all gem files'
+  task :all => %w[clean gem gem:java gem:windows]
+
+  java_gem_spec = gem_spec.dup
+  java_gem_spec.platform = 'java'
+  java_gem_spec.extensions.clear
+  java_gem_spec.files.delete_if { |f| f.start_with?('ext/') }
+
+  directory java_gem_dir = gem_task.package_dir
+
+  java_gem_file = File.basename(java_gem_spec.cache_file)
+  java_gem_path = File.join(java_gem_dir, java_gem_file)
+
+  desc "Build the gem file #{java_gem_file}"
+  task :java => java_gem_path
+
+  file java_gem_path => [java_gem_dir] + java_gem_spec.files do
+    lib_file = 'lib/unicode.rb'
+    tmp_file = "#{lib_file}.tmp-#{$$}"
+
+    begin
+      mv lib_file, tmp_file
+
+      File.write(lib_file, <<-EOT)
+  module Unicode
+
+    extend self
+
+    def upcase(str)
+      str.to_java.to_upper_case
+    end
+
+    def downcase(str)
+      str.to_java.to_lower_case
+    end
+
+  end
+      EOT
+
+      Gem::Package.build(java_gem_spec)
+
+      mv java_gem_file, java_gem_dir
+    ensure
+      mv tmp_file, lib_file if File.exist?(tmp_file)
+    end
+  end
+
+  desc "Build native gems for Windows"
+  task :windows do
+    ENV["RUBY_CC_VERSION"] = "1.8.7:1.9.3"
+    sh "rake cross compile"
+    sh "rake cross native gem"
+  end
+
 end
 
 desc "Update from upstream"
