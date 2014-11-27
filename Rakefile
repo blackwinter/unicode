@@ -38,25 +38,11 @@ namespace :gem do
   file java_gem_path => [java_gem_dir] + java_gem_spec.files do
     lib_file = 'lib/unicode.rb'
     tmp_file = "#{lib_file}.tmp-#{$$}"
+    jrb_file = lib_file.sub('.', '-java.')
 
     begin
       mv lib_file, tmp_file
-
-      File.write(lib_file, <<-EOT)
-  module Unicode
-
-    extend self
-
-    def upcase(str)
-      str.to_java.to_upper_case
-    end
-
-    def downcase(str)
-      str.to_java.to_lower_case
-    end
-
-  end
-      EOT
+      ln jrb_file, lib_file
 
       Gem::Package.build(java_gem_spec)
 
