@@ -1,20 +1,20 @@
-require "rake/clean"
-require "rake/extensiontask"
-require "rubygems/package_task"
+require 'rake/clean'
+require 'rake/extensiontask'
+require 'rubygems/package_task'
 
-CLEAN << "pkg" << "tmp" << "lib/unicode"
+CLEAN << 'pkg' << 'tmp' << 'lib/unicode'
 
 UPSTREAM_URL = 'http://www.yoshidam.net/unicode-%s.tar.gz'
 
-gem_spec = eval(File.read(File.expand_path("../unicode.gemspec", __FILE__)))
+gem_spec = eval(File.read(File.expand_path('../unicode.gemspec', __FILE__)))
 
 gem_task = Gem::PackageTask.new(gem_spec) {|pkg|}
 
 Rake::ExtensionTask.new('unicode_native', gem_spec) do |ext|
   ext.cross_compile = true
   ext.cross_platform = ['x86-mingw32', 'x86-mswin32-60']
-  ext.ext_dir = "ext/unicode"
-  ext.lib_dir = "lib/unicode"
+  ext.ext_dir = 'ext/unicode'
+  ext.lib_dir = 'lib/unicode'
 end
 
 namespace :gem do
@@ -52,16 +52,16 @@ namespace :gem do
     end
   end
 
-  desc "Build native gems for Windows"
+  desc 'Build native gems for Windows'
   task :windows do
-    ENV["RUBY_CC_VERSION"] = "1.8.7:1.9.3"
-    sh "rake cross compile"
-    sh "rake cross native gem"
+    ENV['RUBY_CC_VERSION'] = '1.9.3:2.0.0:2.1.5'
+    sh 'rake cross compile'
+    sh 'rake cross native gem'
   end
 
 end
 
-desc "Update from upstream"
+desc 'Update from upstream'
 task :update, [:version] do |t, args|
   require 'zlib'
   require 'open-uri'
