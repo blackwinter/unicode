@@ -54,7 +54,7 @@ namespace :gem do
 
   desc 'Build native gems for Windows'
   task :windows do
-    ENV['RUBY_CC_VERSION'] = '1.9.3:2.0.0:2.1.5'
+    ENV['RUBY_CC_VERSION'] = '1.9.3:2.0.0:2.1.5:2.2.0'
     sh 'rake cross compile'
     sh 'rake cross native gem'
   end
