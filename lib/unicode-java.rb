@@ -63,9 +63,8 @@ module Unicode
 
   alias_method :nfkc, :normalize_KC
 
-  # Normalize Unicode string with #decompose_safe (#decompose_safe + #compose).
   def normalize_C_safe(str)
-    raise NotImplementedError
+    compose(decompose_safe(str))
   end
 
   alias_method :nfc_safe, :normalize_C_safe
