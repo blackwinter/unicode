@@ -20,7 +20,7 @@ end
 namespace :gem do
 
   desc 'Build all gem files'
-  task :all => %w[clean gem gem:java gem:windows]
+  task all: %w[clean gem gem:java gem:windows]
 
   java_gem_spec = gem_spec.dup
   java_gem_spec.platform = 'java'
@@ -33,7 +33,7 @@ namespace :gem do
   java_gem_path = File.join(java_gem_dir, java_gem_file)
 
   desc "Build the gem file #{java_gem_file}"
-  task :java => java_gem_path
+  task java: java_gem_path
 
   file java_gem_path => [java_gem_dir] + java_gem_spec.files do
     lib_file = 'lib/unicode.rb'
@@ -54,7 +54,7 @@ namespace :gem do
 
   desc 'Build native gems for Windows'
   task :windows do
-    ENV['RUBY_CC_VERSION'] = '1.9.3:2.0.0:2.1.5:2.2.0'
+    ENV['RUBY_CC_VERSION'] = '1.9.3:2.0.0:2.1.5:2.2.2:2.3.0'
     sh 'rake cross compile'
     sh 'rake cross native gem'
   end
