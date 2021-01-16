@@ -1,4 +1,4 @@
-#! /usr/local/bin/ruby -KU
+#! /usr/bin/ruby -KU
 # -*- coding: utf-8 -*-
 
 require 'unicode'
