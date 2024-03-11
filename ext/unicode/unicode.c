@@ -1039,7 +1039,7 @@ unicode_get_categories(VALUE obj, VALUE str)
   WStr_allocWithUTF8L(&wstr, RSTRING_PTR(str), RSTRING_LEN(str));
 
   return rb_ensure(get_categories_internal, (VALUE)&param,
-                   get_categories_ensure, (VALUE)wstr);
+                   get_categories_ensure, (VALUE)&wstr);
 }
 
 VALUE
@@ -1055,7 +1055,7 @@ unicode_get_abbr_categories(VALUE obj, VALUE str)
   WStr_allocWithUTF8L(&wstr, RSTRING_PTR(str), RSTRING_LEN(str));
 
   return rb_ensure(get_categories_internal, (VALUE)&param,
-                   get_categories_ensure, (VALUE)wstr);
+                   get_categories_ensure, (VALUE)&wstr);
 }
 
 VALUE
