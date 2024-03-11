@@ -994,8 +994,9 @@ typedef struct _get_categories_param {
 } get_categories_param;
 
 static VALUE
-get_categories_internal(get_categories_param* param)
+get_categories_internal(VALUE param_value)
 {
+  get_categories_param* param = (get_categories_param*)param_value;
   WString* wstr = param->wstr;
   VALUE str = param->str;
   VALUE* catname = param->catname;
@@ -1037,7 +1038,7 @@ unicode_get_categories(VALUE obj, VALUE str)
   WStr_allocWithUTF8L(&wstr, RSTRING_PTR(str), RSTRING_LEN(str));
 
   return rb_ensure(get_categories_internal, (VALUE)&param,
-                   get_categories_ensure, (VALUE)&wstr);
+                 get_categories_ensure, (VALUE)&wstr);
   /* wstr will be freed in get_text_elements_ensure() */
 }
 
@@ -1056,7 +1057,6 @@ unicode_get_abbr_categories(VALUE obj, VALUE str)
 
   return rb_ensure(get_categories_internal, (VALUE)&param,
                    get_categories_ensure, (VALUE)&wstr);
-  /* wstr will be freed in get_text_elements_ensure() */
 }
 
 VALUE
