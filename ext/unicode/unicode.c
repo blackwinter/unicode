@@ -1130,8 +1130,9 @@ typedef struct _get_text_elements_param {
 } get_text_elements_param;
 
 VALUE
-get_text_elements_internal(get_text_elements_param* param)
+get_text_elements_internal(VALUE param_value)
 {
+  get_text_elements_param* param = (get_text_elements_param*)param_value;
   WString* wstr = param->wstr;
   VALUE str = param->str;
   int start_pos;
@@ -1145,7 +1146,7 @@ get_text_elements_internal(get_text_elements_param* param)
     int cat = get_gencat(c0);
     int length = 1;
     int j;
-
+	  
     if (cat == c_Mn || cat == c_Mc || cat == c_Me) {
       volatile VALUE rstr = TO_(str, wstring_to_rstring(wstr, start_pos, length));
       if (!block_p)
@@ -1225,8 +1226,7 @@ unicode_get_text_elements(VALUE obj, VALUE str)
   WStr_allocWithUTF8L(&wstr, RSTRING_PTR(str), RSTRING_LEN(str));
 
   return rb_ensure(get_text_elements_internal, (VALUE)&param,
-                 get_text_elements_ensure, (VALUE)&wstr);
-  /* wstr will be freed in get_text_elements_ensure() */
+                   get_text_elements_ensure, (VALUE)&wstr);
 }
 
 void
