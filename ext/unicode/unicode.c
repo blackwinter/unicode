@@ -1206,8 +1206,9 @@ get_text_elements_internal(get_text_elements_param* param)
 }
 
 VALUE
-get_text_elements_ensure(WString* wstr)
+get_text_elements_ensure(VALUE wstr_value)
 {
+  WString* wstr = (WString*)wstr_value;
   WStr_free(wstr);
   return Qnil;
 }
@@ -1225,7 +1226,7 @@ unicode_get_text_elements(VALUE obj, VALUE str)
   WStr_allocWithUTF8L(&wstr, RSTRING_PTR(str), RSTRING_LEN(str));
 
   return rb_ensure(get_text_elements_internal, (VALUE)&param,
-                   get_text_elements_ensure, (VALUE)&wstr);
+                 get_text_elements_ensure, (VALUE)wstr);
   /* wstr will be freed in get_text_elements_ensure() */
 }
 
