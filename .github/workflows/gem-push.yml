@@ -33,7 +33,7 @@ jobs:
         gem build *.gemspec
         gem push --KEY github --host https://rubygems.pkg.github.com/${OWNER} *.gem
       env:
-        GEM_HOST_API_KEY: "Bearer ${{secrets.GITHUB_TOKEN}}"
+        GEM_HOST_API_KEY: "Bearer ${{secrets.MYTOKEN}}"
         OWNER: ${{ github.repository_owner }}
 
     - name: Publish to RubyGems
