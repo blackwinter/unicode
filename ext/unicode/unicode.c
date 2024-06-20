@@ -994,8 +994,9 @@ typedef struct _get_categories_param {
 } get_categories_param;
 
 static VALUE
-get_categories_internal(get_categories_param* param)
+get_categories_internal(VALUE param_value)
 {
+  get_categories_param* param = (get_categories_param*)param_value;
   WString* wstr = param->wstr;
   VALUE str = param->str;
   VALUE* catname = param->catname;
@@ -1018,8 +1019,9 @@ get_categories_internal(get_categories_param* param)
 }
 
 VALUE
-get_categories_ensure(WString* wstr)
+get_categories_ensure(VALUE wstr_value)
 {
+  WString* wstr = (WString*)wstr_value;
   WStr_free(wstr);
   return Qnil;
 }
@@ -1131,8 +1133,9 @@ typedef struct _get_text_elements_param {
 } get_text_elements_param;
 
 VALUE
-get_text_elements_internal(get_text_elements_param* param)
+get_text_elements_internal(VALUE param_value)
 {
+  get_text_elements_param* param = (get_text_elements_param*)param_value;
   WString* wstr = param->wstr;
   VALUE str = param->str;
   int start_pos;
@@ -1206,8 +1209,9 @@ get_text_elements_internal(get_text_elements_param* param)
 }
 
 VALUE
-get_text_elements_ensure(WString* wstr)
+get_text_elements_ensure(VALUE wstr_value)
 {
+  WString* wstr = (WString*)wstr_value;
   WStr_free(wstr);
   return Qnil;
 }
