@@ -34,8 +34,9 @@ static rb_encoding* enc_out;
 
 inline static VALUE
 taintObject(VALUE src, VALUE obj) {
-  if (OBJ_TAINTED(src))
-    OBJ_TAINT(obj);
+  // deprecated: taintedness turned out to be a wrong idea
+  //if (OBJ_TAINTED(src))
+  //  OBJ_TAINT(obj);
   return obj;
 }
 #define TO_(src, obj) (taintObject(src, obj))
