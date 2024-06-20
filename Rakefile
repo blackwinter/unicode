@@ -10,9 +10,9 @@ gem_spec = eval(File.read(File.expand_path('../unicode.gemspec', __FILE__)))
 
 gem_task = Gem::PackageTask.new(gem_spec) {|pkg|}
 
-Rake::ExtensionTask.new('unicode_native', gem_spec) do |ext|
+cross_task = Rake::ExtensionTask.new('unicode_native', gem_spec) do |ext|
   ext.cross_compile = true
-  ext.cross_platform = ['x86-mingw32', 'x86-mswin32-60']
+  ext.cross_platform = %w[x86-mingw32]
   ext.ext_dir = 'ext/unicode'
   ext.lib_dir = 'lib/unicode'
 end
@@ -54,9 +54,10 @@ namespace :gem do
 
   desc 'Build native gems for Windows'
   task :windows do
-    ENV['RUBY_CC_VERSION'] = '1.9.3:2.0.0:2.1.5:2.2.2:2.3.0'
-    sh 'rake cross compile'
-    sh 'rake cross native gem'
+    require 'rake_compiler_dock'
+    cross_task.cross_platform.each { |platform|
+      RakeCompilerDock.sh "rake native:#{platform} gem", platform: platform
+    }
   end
 
 end
